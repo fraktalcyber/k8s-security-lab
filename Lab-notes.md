@@ -433,3 +433,30 @@ Quick fix for everything:
 kubectl starboard uninstall
 kubectl starboard install
 ```
+    
+## Autoscaling
+
+Note move this to userdata: kubectl apply -f https://k8s.io/examples/application/php-apache.yaml
+
+(This is from
+https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
+
+Notice php-apache in the default namespace:
+
+    kubectl get pods
+
+Create a autoscale definition:
+
+    kubectl autoscale deployment php-apache --cpu-percent=50 --min=1 --max=10
+
+Create load:
+
+    kubectl run -i --tty load-generator --rm --image=busybox --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://php-apache; done"
+
+Observe the changes in the autoscaling:
+
+    kubectl get hpa php-apache --watch
+
+Get more detailed information about the autoscaling by:
+
+    kubectl describe hpa php-apache
