@@ -436,30 +436,83 @@ kubectl starboard install
 
 ## Autoscaling
 
-Note move this to userdata: kubectl apply -f https://k8s.io/examples/application/php-apache.yaml
+(This is from https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
 
-(This is from
-https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
+These commands are run from your own workstation.
 
-Notice php-apache in the default namespace:
+Notice preinstalled php-apache deployment in the default namespace:
 
-    kubectl get pods
+    kubectl get deployments
+    NAME         READY   UP-TO-DATE   AVAILABLE   AGE
+    php-apache   1/1     1            1           7m19s
 
-Create a autoscale definition:
+There's also a preinstalled metrics-server that must be in place in order for
+the autoscaling to work:
+
+    kubectl describe deployment metrics-server -n kube-system
+    NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+    ...
+    metrics-server           1/1     1            1           4d1h
+
+First, we need to create an autoscale object in the Kubernetes cluster. You
+can do it on the command line with the command:
 
     kubectl autoscale deployment php-apache --cpu-percent=50 --min=1 --max=10
 
-Create load:
+which should output this:
 
-    kubectl run -i --tty load-generator --rm --image=busybox --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://php-apache; done"
+    horizontalpodautoscaler.autoscaling/php-apache autoscaled
 
-Observe the changes in the autoscaling:
+You can see the details of the HorizontalPodAutoscaling object with the
+command:
+
+    kubectl describe hpa php-apache
+    Name:                                                  php-apache
+    Namespace:                                             default
+    Labels:                                                <none>
+    Annotations:                                           <none>
+    CreationTimestamp:                                     Thu, 03 Feb 2022 15:24:22 +0200
+    ...
+
+
+Before you start generating load, you can put a continuous watch on the
+autoscaling in another terminal:
 
     kubectl get hpa php-apache --watch
 
-Get more detailed information about the autoscaling by:
+If you want to follow more detailed information about the autoscaling, you can
+do something like this (for which you need the 'watch' command line tool):
 
-    kubectl describe hpa php-apache
+    watch -n2 .kubectl describe hpa php-apache
+
+Then we create some load by a simple loop that just makes requests to the
+service:
+
+    kubectl run -i --tty load-generator --rm --image=busybox --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://php-apache; done"
+
+It takes a minute or two before the metrics are updated so that the
+autoscaling starts to happen:
+
+    kubectl get hpa --watch
+    NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+    php-apache   Deployment/php-apache   0%/50%    1         10        1          7m55s
+    php-apache   Deployment/php-apache   146%/50%   1         10        1          8m1s
+    php-apache   Deployment/php-apache   146%/50%   1         10        3          8m16s
+
+You can observe the autoscaling for 10 minutes or so to see if it settles at some
+specific amount of replicas.
+
+After that, you can stop by pressing ctrl-c on the load-generator terminal
+window or simply just saying:
+
+    kubectl delete pod load-generator
+
+Observe how long does it take for the deployment and autoscaling to go back to
+just one replica.
+
+You can experiment with different target values of autoscaling to see how it
+behaves with the load.
+
 
 ## Sensitive mount
 
