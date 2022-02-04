@@ -33,7 +33,7 @@ where the actual IP address is different for every participant.
 
 As discussed, easiest way to inspect Pod specifications' security posture is
 to use kubesec.io, which can be run from the command line when you have Docker
-installed. (Run docker on your own machine.)
+installed. (Note: run docker on your own workstation.)
 
 Create a file named minimal.yaml on your machine with these contents:
 
@@ -316,6 +316,9 @@ export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
 kubectl krew
 
+Note: if you can't install krew on your own machine, there's a pre-installed
+kubectl with krew inside the cluster too.
+
 ```
 
 Install starboard using krew:
@@ -474,7 +477,6 @@ command:
     CreationTimestamp:                                     Thu, 03 Feb 2022 15:24:22 +0200
     ...
 
-
 Before you start generating load, you can put a continuous watch on the
 autoscaling in another terminal:
 
@@ -483,7 +485,7 @@ autoscaling in another terminal:
 If you want to follow more detailed information about the autoscaling, you can
 do something like this (for which you need the 'watch' command line tool):
 
-    watch -n2 .kubectl describe hpa php-apache
+    watch -n2 kubectl describe hpa php-apache
 
 Then we create some load by a simple loop that just makes requests to the
 service:
