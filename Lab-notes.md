@@ -6,7 +6,7 @@ are not allowed to gain access to other resources inside the account. If you
 do manage to do that, please let us know. The idea is to play around with
 Kubernetes, not to simulate a real attack.
 
-## Connecting to the environment
+## Task: Connecting to the environment
 
 The lab is setup so that each participant has their own Kubernetes cluster
 running in a EC2 virtual machine. Access is provided with a kubeconfig file,
@@ -29,7 +29,9 @@ should now produce an output like this:
 
 where the actual IP address is different for every participant.
 
-## Inspecting Pod security settings
+**If you get this far, you've finished the first task.**
+
+## Task: Inspecting Pod security settings
 
 As discussed, easiest way to inspect Pod specifications' security posture is
 to use kubesec.io, which can be run from the command line when you have Docker
@@ -85,18 +87,20 @@ Run the kubesec scan again and observe the change in the score.
 of the changes in scoring**. Deploy the application again so that you can
 verify that the changes actually work.
 
-- Make the root filesystem read-only
-- Limit the amount of memory that the Pod can use to 100 megabytes
--- **What can you say about the request size if you only give the limit?**
--- Hint: you can use kubectl describe pod <pod-name> to observe the limits and
--- Add explicit memory request to 50 megabytes
-requests
-- Make the container privileged.
--- Start a shell inside a privileged container and a non-privileged container
--- Observe the differences in the /dev filesystem
-- Make the container to allow privilege escalation
+* Make the root filesystem read-only
+* Limit the amount of memory that the Pod can use to 100 megabytes
+  * **What can you say about the request size if you only give the limit?**
+  * Hint: you can use kubectl describe pod <pod-name> to observe the limits and
+  * Add explicit memory request to 50 megabytes requests
+* Make the container privileged.
+  * Start a shell inside a privileged container and a non-privileged container
+  * Observe the differences in the /dev filesystem
+* Make the container to allow privilege escalation
 
-## Role-based access control
+Now you've successfully finished the task: **Inspecting Pod security
+settings**
+
+## Task: Role-based access control
 
 Familiarize yourself with the RBAC concepts with a Pod that runs a kubectl
 inside it. The kubectl binary uses the service account token mounted at
@@ -292,7 +296,10 @@ anything, ie. administrates the cluster**.
 Hint: you can get built-in cluster roles with kubectl get clusterrole. There's
 a special role that allows you to admin the cluster.
 
-## Vulnerability scanning
+
+Now you've successfully finished the task: **Role-based access control**
+
+## Task: Vulnerability scanning
 
 We are going to use Starboard for executing different k8s security tools:
 <https://github.com/aquasecurity/starboard>
@@ -437,7 +444,9 @@ kubectl starboard uninstall
 kubectl starboard install
 ```
 
-## Autoscaling
+Now you've successfully finished the task: **Vulnerability scanning**
+
+## Task: Autoscaling
 
 (This is from https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
 
@@ -515,8 +524,9 @@ just one replica.
 You can experiment with different target values of autoscaling to see how it
 behaves with the load.
 
+Now you've successfully finished the task: **Autoscaling**
 
-## Sensitive mount
+## Task: Sensitive mount
 
 The following yaml file mounts the Node's root filesystem under /hostmounts. Save the file as `sensitive-mount.yaml` and run it using `kubectl apply -f sensitive-mount.yaml`:
 
@@ -546,7 +556,9 @@ spec:
 
 When you open an interactive shell to the pod using `kubectl exec -it  --stdin sensitive-mount  -- bash` you can find the Node's filesystem under /hostmounts. You can take over the Node simply by switching to it's namespace by running `chroot /hostmounts`. You can verify this for example by running `cat /etc/passwd` and seeing the user `ec2-user` that is the default user of an AWS EC2 Linux instance.
 
-## Privileged pod
+Now you've successfully finished the task: **Sensitive mount**
+
+## Task: Privileged pod
 
 Running a pod in a privileged mode means that the pod can access the host’s resources and kernel capabilities. The following YAML will set up a privileged pod:
 
@@ -568,3 +580,10 @@ spec:
       privileged: true
       runAsUser: 999
 ```
+
+Now you've successfully finished the task: **Privileged pod**
+
+
+Tasks still to come:
+* Offensive techniques
+* Limiting traffic with Network Policies
