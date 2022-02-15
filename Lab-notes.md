@@ -1,25 +1,46 @@
 
 # Kubernetes security exercise Lab
 
-**Note**: you are allowed to play around inside the cluster as you wish, but you
+## Note about the training environment
+
+You are allowed to play around inside the cluster as you wish, but you
 are not allowed to gain access to other resources inside the account. If you
 do manage to do that, please let us know. The idea is to play around with
 Kubernetes, not to simulate a real attack.
 
-## Task: Connecting to the environment
+## Prerequisite: signing in to Fraktal's training account for shell access
 
-The lab is setup so that each participant has their own Kubernetes cluster
-running in a EC2 virtual machine. Access is provided with a kubeconfig file,
-which should be regarded as sensitive as any private password so don't spread
-it around.
+You will get an email to sign in to the AWS environment. It contains a link
+which will take you to the login page. Enter the username (firstname.lastname)
+and the password you received:
 
-Easiest way to use the kubeconfig file is to save it as a separate file and
-using the KUBECONFIG environment variable to point to it:
+<img src="sign-in.png" alt="sign in" width="200"/>
 
-    mv kubeconfig ~/.kube/config-k8slab
-    export KUBECONFIG="${HOME}/.kube/config-k8slab"
+Next, you'll be required to change your password. Make yourself a new password
+and store it safely for future usage:
 
-Running
+<img src="password-change.png" alt="sign in" width="200"/>
+
+Now you should have arrived at the AWS Console home page:
+
+<img src="console.png" alt="sign in" width="200"/>
+
+Copy-paste or click the link to [Session
+manager](https://eu-north-1.console.aws.amazon.com/systems-manager/session-manager/start-session?region=eu-north-1)
+which should lead to you page that looks like this:
+
+<img src="session-manager.png" alt="sign in" width="200"/>
+
+Select k8s-seclab-bastion from the list and click Start session. Although the
+page lists all the virtual machines, you can only start a session in the
+bastion host.
+
+There's a personal cluster for every participant in the environment. You can
+access it by setting the environment variable KUBECONFIG
+
+    export KUBECONFIG="${HOME}/.kube/config-<your.username>"
+
+Now running
 
     kubectl get nodes
 
@@ -30,6 +51,7 @@ should now produce an output like this:
 where the actual IP address is different for every participant.
 
 **If you get this far, you've finished the first task.**
+
 
 ## Task: Inspecting Pod security settings
 
