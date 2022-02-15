@@ -36,11 +36,11 @@ page lists all the virtual machines, you can only start a session in the
 bastion host.
 
 There's a personal cluster for every participant in the environment. You can
-access it by setting the environment variable KUBECONFIG
+access it by setting the environment variable KUBECONFIG:
 
-    export KUBECONFIG="${HOME}/.kube/config-<your.username>"
+    export KUBECONFIG="/tmp/config-<your.username>"
 
-Now running
+Now running:
 
     kubectl get nodes
 
@@ -51,7 +51,6 @@ should now produce an output like this:
 where the actual IP address is different for every participant.
 
 **If you get this far, you've finished the first task.**
-
 
 ## Task: Inspecting Pod security settings
 
