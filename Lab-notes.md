@@ -12,7 +12,7 @@ Kubernetes, not to simulate a real attack.
 
 You will get an email to sign in to the AWS environment. It contains a link
 which will take you to the login page. Enter the username (firstname.lastname)
-and the password you received:
+and the password you received from Fraktal:
 
 <img src="sign-in.png" alt="sign in" width="200"/>
 
@@ -30,6 +30,10 @@ manager](https://eu-north-1.console.aws.amazon.com/systems-manager/session-manag
 which should lead to you page that looks like this:
 
 <img src="session-manager.png" alt="sign in" width="200"/>
+
+Note if you go to Session Manager through the AWS Console navigation, make
+sure that you are in the eu-north-1 region. The above link contains the region
+with it.
 
 Select k8s-seclab-bastion from the list and click Start session. Although the
 page lists all the virtual machines, you can only start a session in the
