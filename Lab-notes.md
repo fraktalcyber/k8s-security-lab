@@ -21,7 +21,7 @@ and store it safely for future usage:
 
 <img src="password-change.png" alt="sign in" width="200"/>
 
-Now you should have arrived at the AWS Console home page:
+You should have now arrived at the AWS Console home page:
 
 <img src="console.png" alt="sign in" width="200"/>
 
@@ -32,8 +32,8 @@ which should lead to you page that looks like this:
 <img src="session-manager.png" alt="sign in" width="200"/>
 
 Note if you go to Session Manager through the AWS Console navigation, make
-sure that you are in the eu-north-1 region. The above link contains the region
-with it.
+sure that you are in the **eu-north-1** region. The above link contains the
+region with it.
 
 Select k8s-seclab-bastion from the list and click Start session. Although the
 page lists all the virtual machines, you can only start a session in the
@@ -44,7 +44,7 @@ access it by setting the environment variable KUBECONFIG:
 
     export KUBECONFIG="/tmp/config-<your.username>"
 
-Now running:
+Running:
 
     kubectl get nodes
 
@@ -54,15 +54,26 @@ should now produce an output like this:
 
 where the actual IP address is different for every participant.
 
+If during the exercises there's ever a situation where eg. kubectl complains
+something like:
+
+    The connection to the server localhost:8080 was refused - did you specify the right host or port?
+
+it probably means that the KUBECONFIG environment variable isn't set to your
+cluster's kubeconfig file (at /tmp/config-your.name). Set the environment
+variable and you're good to go.
+
 **If you get this far, you've finished the first task.**
 
 ## Task: Inspecting Pod security settings
 
 As discussed, easiest way to inspect Pod specifications' security posture is
 to use kubesec.io, which can be run from the command line when you have Docker
-installed. (Note: run docker on your own workstation.)
+installed. Note: you can run docker also on your own workstation, but there's
+also docker installed on the bastion host. kubectl must be run on the bastion
+host.
 
-Create a file named minimal.yaml on your machine with these contents:
+Create a file named minimal.yaml with these contents:
 
     apiVersion: v1
     kind: Pod
@@ -88,7 +99,7 @@ You can see the hello world application in action by running:
 
     kubectl port-forward kubesec-demo 8080:8080
 
-And going to http://localhost:8080 with your browser or curl.
+And curling to http://localhost:8080.
 
 Question: **as what user is the process run inside the Pod currently?**
 
@@ -132,8 +143,8 @@ inside it. The kubectl binary uses the service account token mounted at
 /var/run/secrets/kubernetes.io/serviceaccount/token.
 
 This usage of the service account and kubectl inside a container is only for
-demonstration purposes and usually it is not recommended to run kubectl inside
-the containers and authorize the service account to do administrative tasks.
+demonstration purposes and usually it is **not** recommended to run kubectl inside
+the containers and to authorize the service account to do administrative tasks.
 For the lab environment, however, it is the most straight-forward way to work
 with Kubernetes identities.
 
@@ -151,7 +162,7 @@ Create a Pod definition listed below in a file named kubectl-pod.yaml:
             - sleep
             - "infinity"
 
-Then create the Pod by running kubectl on your own workstation like this:
+Then create the Pod by running kubectl:
 
     kubectl apply -f kubectl-pod.yaml
 
@@ -176,11 +187,11 @@ Running kubectl inside the container produces an error:
 
 This is because the kubectl inside the container is using the default service
 account and it hasn't been given any permissions. The kubectl you're running
-from your own workstation has full administrative authority.
+from the bastion host has full administrative authority.
 
-Note: you shouldn't be giving special permissions to the default service
-account for this exact reason. If the attacker gains access to a container,
-you don't want to give them any other access to your cluster.
+Note: normally you shouldn't be giving special permissions to the default
+service account for this exact reason. If the attacker gains access to a
+container, you don't want to give them any other access to your cluster.
 
 But to demonstrate RBAC concepts, let's first give our Pod our own service
 account. Modify the kubectl-pod.yaml file to be the following:
@@ -203,8 +214,7 @@ account. Modify the kubectl-pod.yaml file to be the following:
             - sleep
             - "infinity"
 
-Remove the old Pod and re-create the Pod by running kubectl on your own
-workstation:
+Remove the old Pod and re-create the Pod by running kubectl on bastion host:
 
     kubectl delete -f kubectl-pod.yaml
     kubectl apply -f kubectl-pod.yaml
@@ -220,7 +230,7 @@ Now the error message shows our service account:
 
 Let's now create a Role and a RoleBinding that allows our service account
 (my-service-account) to query Pods from the default namespace. Create a file
-named role.yaml on your own workstation with the following content:
+named role.yaml on the bastion host with the following content:
 
     apiVersion: rbac.authorization.k8s.io/v1
     kind: Role
@@ -321,8 +331,7 @@ anything, ie. administrates the cluster**.
 Hint: you can get built-in cluster roles with kubectl get clusterrole. There's
 a special role that allows you to admin the cluster.
 
-
-Now you've successfully finished the task: **Role-based access control**
+You've now successfully finished the task: **Role-based access control**
 
 ## Task: Vulnerability scanning
 
@@ -331,25 +340,17 @@ We are going to use Starboard for executing different k8s security tools:
 
 ### Starboard installation
 
-Install krew kubectl plugin manager, <https://github.com/kubernetes-sigs/krew>:
+The krew plugin is pre-installed on the bastion host. You can verify that it
+is working by issuing:
 
-``` bash
-(
-  set -x; cd "$(mktemp -d)" &&
-  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
-  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
-  KREW="krew-${OS}_${ARCH}" &&
-  curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
-  tar zxvf "${KREW}.tar.gz" &&
-  ./"${KREW}" install krew
-)
+    kubectl krew
 
-export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+which should list the available commands of the krew plugin.
 
-kubectl krew
+If it is not working, you can add the plugin bin directory to the path by
+issuing the command:
 
-Note: if you can't install krew on your own machine, there's a pre-installed
-kubectl with krew inside the cluster too.
+    export PATH=/usr/local/krew/bin:$PATH
 
 ```
 
@@ -359,6 +360,9 @@ Install starboard using krew:
 kubectl krew install starboard
 kubectl starboard help
 ```
+
+Note that the starboard service might already be installed on the bastion host
+when you're using it.
 
 Install starboard resources to k8s cluster:
 
@@ -372,7 +376,7 @@ Check that everything worked:
 kubectl api-resources --api-group aquasecurity.github.io
 ```
 
-### Container vuln scanning
+### Container vulnerability scanning
 
 Starboard runs Trivy in standalone mode to scan for security issues in containers associated with speficied resources.
 
@@ -475,7 +479,7 @@ Now you've successfully finished the task: **Vulnerability scanning**
 
 (This is from https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
 
-These commands are run from your own workstation.
+These commands are run from the bastion host.
 
 Notice preinstalled php-apache deployment in the default namespace:
 
@@ -607,7 +611,6 @@ spec:
 ```
 
 Now you've successfully finished the task: **Privileged pod**
-
 
 Tasks still to come:
 * Offensive techniques
