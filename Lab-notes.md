@@ -612,6 +612,131 @@ spec:
 
 Now you've successfully finished the task: **Privileged pod**
 
+## Task: Limiting traffic with network policies
+
+The lab environment has a pre-installed Calico, which is a network policy
+provider that is required for the network policies to actually be enforced.
+
+You can verify this by listing the Pods in the calico-system namespace:
+
+```
+kubectl get pods -n calico-system
+NAME                                       READY   STATUS    RESTARTS   AGE
+calico-typha-676df89dd9-rbjqd              1/1     Running   0          2d22h
+calico-node-x2mkn                          1/1     Running   0          2d22h
+calico-kube-controllers-68b45d4564-kmnq2   1/1     Running   0          2d22h
+```
+
+First create a namespace for our policy demo:
+```
+kubectl create ns policy-demo
+```
+
+The create a demo nginx deployment and expose it with the DNS name nginx:
+
+```
+kubectl create deployment --namespace=policy-demo nginx --image=nginx
+kubectl expose --namespace=policy-demo deployment nginx --port=80
+```
+
+Verify that it works by running a busybox image in your cluster and wgetting
+the nginx root page:
+
+```
+kubectl run --namespace=policy-demo access --rm -ti --image busybox /bin/sh
+If you don't see a command prompt, try pressing enter.
+/ # wget -q nginx -O -
+<!DOCTYPE html>
+<html>
+...
+```
+
+Create a file named default-deny.yaml with the contents:
+
+```
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: default-deny
+  namespace: policy-demo
+spec:
+  podSelector:
+    matchLabels: {}
+```
+
+And apply it to your cluster:
+```
+kubectl apply -f default-deny.yaml
+networkpolicy.networking.k8s.io/default-deny created
+```
+
+Verify that the connection from the busybox to the nginx no longer works:
+
+```
+kubectl run --namespace=policy-demo access --rm -ti --image busybox /bin/sh
+If you don't see a command prompt, try pressing enter.
+/ # wget -q --timeout=5 nginx -O -
+wget: download timed out
+```
+
+Next, create a file named access-nginx.yaml with the contents:
+
+```
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: access-nginx
+  namespace: policy-demo
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx
+  ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            run: access
+```
+
+What this does is to grant access to Pods with the label 'run: access' to the
+ingress of nginx, meaning the incoming traffic.
+
+Apply this to your cluster:
+
+```
+kubectl apply -f access-nginx.yaml
+```
+
+Verify that the access from your Pod labeled access now works:
+
+```
+kubectl run --namespace=policy-demo access --rm -ti --image busybox /bin/sh
+If you don't see a command prompt, try pressing enter.
+/ # wget -q --timeout=5 nginx -O -
+<!DOCTYPE html>
+<html>
+```
+
+You'll notice that if you run the same image with the label 'no-access' (or
+any other name but 'access'), you can't access the nginx from within that Pod:
+
+```
+kubectl run --namespace=policy-demo cant-access --rm -ti --image busybox /bin/sh
+If you don't see a command prompt, try pressing enter.
+/ # wget -q --timeout=5 nginx -O -
+wget: download timed out
+```
+
+This demonstrates how the basic building blocks of network policies work.
+
+Finally, you can clean up the demo by running:
+
+```
+kubectl delete ns policy-demo
+```
+
+Now you've successfully finished the task: **Limiting traffic with network
+policies**
+
 Tasks still to come:
 * Offensive techniques
-* Limiting traffic with Network Policies
